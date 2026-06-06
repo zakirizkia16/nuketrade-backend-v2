@@ -7,13 +7,32 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Fungsi ngecek Token VIP (Login)
 async function verifyUser(req) {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log("GAK ADA HEADER AUTH");
+        return null;
+    }
     
     const token = authHeader.slice(7); // Ambil token setelah "Bearer "
-    if (!token) return null;
+    if (!token) {
+        console.log("TOKEN KOSONG");
+        return null;
+    }
 
+    console.log("Mencoba verifikasi token...");
     const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data?.user) return null;
+    
+    // KALAU ADA ERROR DARI SUPABASE, TAMPILIN DI LOG VERCEL
+    if (error) {
+        console.error("ERROR VERIFIKASI SUPABASE:", error.message);
+        return null;
+    }
+    
+    if (!data?.user) {
+        console.log("DATA USER TIDAK DITEMUKAN");
+        return null;
+    }
+
+    console.log("User valid:", data.user.email);
     return data.user;
 }
 
