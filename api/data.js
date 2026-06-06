@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Inisialisasi Supabase Admin
+// Inisialisasi Supabase dengan kunci Admin (Service Role)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Fungsi untuk verifikasi token user
+// Fungsi ngecek Gelang VIP (Token) user
 async function verifyUser(req) {
     const authHeader = req.headers.authorization;
     if (!authHeader) return null;
@@ -18,26 +18,25 @@ async function verifyUser(req) {
 }
 
 export default async function handler(req, res) {
-    // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Ganti dengan URL Netlify lo nanti
+    // Set CORS (Izin akses)
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Nanti ganti URL Netlify lo
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
 
-    // Tangani Preflight CORS
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
 
-    // 1. Verifikasi User
+    // 1. Cek apakah user bawa Token yang valid
     const user = await verifyUser(req);
     if (!user) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({ error: 'Unauthorized: Lo nggak punya akses!' });
     }
 
-    // 2. Ambil parameter rute (contoh: /api/data?endpoint=price)
+    // 2. Cek mau ambil data apa
     const { endpoint } = req.query;
 
-    // 3. Proxy ke API External
+    // 3. Ambil data dari API luar (CoinGecko / Mempool)
     try {
         let apiUrl = '';
         if (endpoint === 'price') apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true';
@@ -51,6 +50,6 @@ export default async function handler(req, res) {
         return res.status(200).json(data);
         
     } catch (error) {
-        return res.status(500).json({ error: 'Gagal ambil data' });
+        return res.status(500).json({ error: 'Gagal ambil data dari server luar' });
     }
 }
