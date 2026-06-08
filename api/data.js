@@ -56,44 +56,48 @@ export default async function handler(req, res) {
     const { endpoint } = req.query;
 
     // 3. Arahkan ke API External
-    try {
-        let apiUrl = '';
-        
-        if (endpoint === 'price') {
-            apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true';
-        } 
-        else if (endpoint === 'mempool') {
-            apiUrl = 'https://mempool.space/api/mempool';
-        } 
-        else if (endpoint === 'blocks') {
-            apiUrl = 'https://mempool.space/api/blocks';
-        } 
-        else if (endpoint === 'fees') {
-            apiUrl = 'https://mempool.space/api/v1/fees/recommended';
-        } 
-                else if (endpoint === 'token_detail') {
-            // Butuh ID koin, contoh: ?endpoint=token_detail&id=dogecoin
-            const id = req.query.id;
-            if (!id) return res.status(400).json({ error: 'Token ID required' });
-            apiUrl = `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&community_data=false&developer_data=false`;
-        } 
-        else if (endpoint === 'token_chart') {
-            // Butuh ID koin, contoh: ?endpoint=token_chart&id=dogecoin
-            const id = req.query.id;
-            if (!id) return res.status(400).json({ error: 'Token ID required' });
-            apiUrl = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=7`;
-        }
-        else {
-            return res.status(404).json({ error: 'Endpoint not found' });
-        }
-        
+            // 3. Arahkan ke API External
+        try {
+            let apiUrl = '';
+            
+            if (endpoint === 'price') {
+                apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true';
+            } 
+            else if (endpoint === 'mempool') {
+                apiUrl = 'https://mempool.space/api/mempool';
+            } 
+            else if (endpoint === 'blocks') {
+                apiUrl = 'https://mempool.space/api/blocks';
+            } 
+            else if (endpoint === 'fees') {
+                apiUrl = 'https://mempool.space/api/v1/fees/recommended';
+            } 
+            else if (endpoint === 'token_detail') {
+                const id = req.query.id;
+                if (!id) return res.status(400).json({ error: 'Token ID required' });
+                apiUrl = `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&community_data=false&developer_data=false`;
+            } 
+            else if (endpoint === 'token_chart') {
+                const id = req.query.id;
+                if (!id) return res.status(400).json({ error: 'Token ID required' });
+                apiUrl = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=7`;
+            }
+            else {
+                return res.status(404).json({ error: 'Endpoint not found' });
+            }
 
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        
-        return res.status(200).json(data);
-        
-    } catch (error) {
-        return res.status(500).json({ error: 'Gagal ambil data dari server luar' });
-    }
+            const response = await fetch(apiUrl);
+            
+            // TAMBAHAN: Kalau CoinGecko nolak (404/429), terusin errornya ke Frontend
+            if (!response.ok) {
+                const errorData = await response.json();
+                return res.status(response.status).json({ error: 'CoinGecko Error', details: errorData });
+            }
+
+            const data = await response.json();
+            return res.status(200).json(data);
+            
+        } catch (error) {
+            return res.status(500).json({ error: 'Gagal ambil data dari server luar' });
+        }
 }
