@@ -71,9 +71,22 @@ export default async function handler(req, res) {
         else if (endpoint === 'fees') {
             apiUrl = 'https://mempool.space/api/v1/fees/recommended';
         } 
+                else if (endpoint === 'token_detail') {
+            // Butuh ID koin, contoh: ?endpoint=token_detail&id=dogecoin
+            const id = req.query.id;
+            if (!id) return res.status(400).json({ error: 'Token ID required' });
+            apiUrl = `https://api.coingecko.com/api/v3/coins/${id}?localization=false&tickers=false&community_data=false&developer_data=false`;
+        } 
+        else if (endpoint === 'token_chart') {
+            // Butuh ID koin, contoh: ?endpoint=token_chart&id=dogecoin
+            const id = req.query.id;
+            if (!id) return res.status(400).json({ error: 'Token ID required' });
+            apiUrl = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=7`;
+        }
         else {
             return res.status(404).json({ error: 'Endpoint not found' });
         }
+        
 
         const response = await fetch(apiUrl);
         const data = await response.json();
